@@ -197,13 +197,22 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	var forwardPeer any = nil
+	if settings.ForwardTo != 0 {
+		if p, err := client.GetPeer(settings.ForwardTo); err != nil {
+			log.Fatalln(err)
+		} else {
+			forwardPeer = p
+		}
+	}
+
 	client.On(telegram.OnMessage, func(m *telegram.NewMessage) error {
 		if m.Message.Out {
 			return nil
 		}
-		if settings.ForwardTo != 0 {
+		if forwardPeer != nil {
 			log.Println("Forward message", m.Message.ID, "to", settings.ForwardTo)
-			if _, err := m.Client.Forward(settings.ForwardTo, m.Peer, []int32{m.Message.ID}); err != nil {
+			if _, err := m.Client.Forward(forwardPeer, m.Peer, []int32{m.Message.ID}); err != nil {
 				log.Println("[WARN] Failed to forward message", m.Message.ID, err)
 			}
 		}
