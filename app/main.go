@@ -25,7 +25,7 @@ import (
 var newTXLock = &sync.Mutex{}
 
 func fetchNewTransactions(client *telegram.Client, retry bool) {
-	if retry {
+	if !retry {
 		if !newTXLock.TryLock() {
 			return
 		}
