@@ -24,13 +24,15 @@ import (
 
 var newTXLock = &sync.Mutex{}
 
-func fetchNewTransactions(client *telegram.Client) {
-	if !newTXLock.TryLock() {
-		return
+func fetchNewTransactions(client *telegram.Client, retry bool) {
+	if retry {
+		if !newTXLock.TryLock() {
+			return
+		}
+		defer newTXLock.Unlock()
 	}
-	defer newTXLock.Unlock()
 
-	tributeAuth, err := getTributeAuth(client)
+	tributeAuth, err := getTributeAuth(client, retry)
 	if err != nil {
 		log.Println("Failed to read last known transaction ID", err)
 		return
@@ -43,7 +45,12 @@ func fetchNewTransactions(client *telegram.Client) {
 
 	transactions, maxTxID, err := tribute.FetchTransactions(tributeAuth, savedTxID)
 	if err != nil {
-		log.Println("Failed to fetch transactions:", err)
+		if retry {
+			log.Println("[WARN] Failed to fetch transactions, will reset tribute tokens:", err)
+			fetchNewTransactions(client, true)
+		} else {
+			log.Println("Failed to fetch transactions:", err)
+		}
 		return
 	}
 
@@ -161,28 +168,30 @@ func readLastKnownTxID() (int64, error) {
 	}
 }
 
-func getTributeAuth(client *telegram.Client) (string, error) {
-	if fd, err := os.Open(path.Join(settings.SessionPath, "tribute.auth")); err == nil {
-		defer fd.Close()
-		data, err := io.ReadAll(fd)
-		if err != nil {
-			return "", err
+func getTributeAuth(client *telegram.Client, reset bool) (string, error) {
+	if !reset {
+		if fd, err := os.Open(path.Join(settings.SessionPath, "tribute.auth")); err == nil {
+			defer fd.Close()
+			data, err := io.ReadAll(fd)
+			if err != nil {
+				return "", err
+			}
+			return string(data), nil
 		}
-		return string(data), nil
-	} else {
-		webViewURL, err := tg.RequestBotWebView(client, settings.BotUsername)
-		if err != nil {
-			return "", err
-		}
-		auth, err := tribute.MakeAuthorizationHeader(webViewURL.URL)
-		if err != nil {
-			return "", err
-		}
-		if err := atomic.WriteFile(path.Join(settings.SessionPath, "tribute.auth"), bytes.NewBuffer([]byte(auth))); err != nil {
-			log.Println("[WARN] Failed to save tribute.auth:", err)
-		}
-		return auth, nil
 	}
+
+	webViewURL, err := tg.RequestBotWebView(client, settings.BotUsername)
+	if err != nil {
+		return "", err
+	}
+	auth, err := tribute.MakeAuthorizationHeader(webViewURL.URL)
+	if err != nil {
+		return "", err
+	}
+	if err := atomic.WriteFile(path.Join(settings.SessionPath, "tribute.auth"), bytes.NewBuffer([]byte(auth))); err != nil {
+		log.Println("[WARN] Failed to save tribute.auth:", err)
+	}
+	return auth, nil
 }
 
 func main() {
@@ -216,12 +225,12 @@ func main() {
 				log.Println("[WARN] Failed to forward message", m.Message.ID, err)
 			}
 		}
-		fetchNewTransactions(m.Client)
+		fetchNewTransactions(m.Client, false)
 		return nil
 	}, telegram.FilterUsers(botUser.(*telegram.UserObj).ID))
 
 	log.Println("Fetching new transactions")
-	go fetchNewTransactions(client)
+	go fetchNewTransactions(client, false)
 
 	log.Println("Wait for messages from", settings.BotUsername)
 	client.Idle()
