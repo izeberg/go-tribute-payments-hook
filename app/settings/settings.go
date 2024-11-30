@@ -27,6 +27,7 @@ func getStr(key, dft string) string {
 
 var (
 	FetchRetryCount        = int(parseInt64("retry_count", "3"))
+	WebAppPlatform         = getStr("webapp_platform", "android")
 	AppID                  = int32(parseInt64("telegram_api_id", ""))
 	AppHash                = getStr("telegram_api_hash", "")
 	SessionPath            = getStr("telegram_session_path", "./session")

@@ -35,7 +35,7 @@ func RequestBotWebView(client *telegram.Client, username string) (*telegram.WebV
 		Bot:         &telegram.InputUserObj{UserID: botUser.ID, AccessHash: botUser.AccessHash},
 		URL:         botFull.BotInfo.MenuButton.(*telegram.BotMenuButtonObj).URL,
 		FromBotMenu: true,
-		Platform:    "bot",
+		Platform:    settings.WebAppPlatform, // Dear tribute, pls don't ban, we need API......
 	})
 }
 

@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+func fixValue(data string) string {
+	// A simple way to fix escaped JSON values without parsing and writing tons of code to preserve the order.
+	return strings.ReplaceAll(data, `\/`, `/`)
+}
+
 func MakeAuthorizationHeader(webViewURL string) (string, error) {
 	webURL, err := url.Parse(webViewURL)
 	if err != nil {
@@ -37,9 +42,12 @@ func MakeAuthorizationHeader(webViewURL string) (string, error) {
 	slices.Sort(values)
 
 	for idx := range values {
-		values[idx] = fmt.Sprintf("%s=%s", values[idx], initDataUnsafe.Get(values[idx]))
+		value := fixValue(initDataUnsafe.Get(values[idx]))
+		values[idx] = fmt.Sprintf("%s=%s", values[idx], value)
 	}
-	initData := base64.StdEncoding.EncodeToString([]byte(strings.Join(values, "\n")))
+
+	valuesStr := strings.Join(values, "\n")
+	initData := base64.StdEncoding.EncodeToString([]byte(valuesStr))
 	authPayload := fmt.Sprintf("1;%s;%s", initData, initDataUnsafe.Get("hash"))
 	authKey := base64.StdEncoding.EncodeToString([]byte(authPayload))
 	return fmt.Sprintf("TgAuth %s", authKey), nil

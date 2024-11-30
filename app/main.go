@@ -209,7 +209,7 @@ func main() {
 	var forwardPeer any = nil
 	if settings.ForwardTo != 0 {
 		if p, err := client.GetPeer(settings.ForwardTo); err != nil {
-			log.Fatalln(err)
+			log.Println("Failed to fetch forward peer:", err)
 		} else {
 			forwardPeer = p
 		}
