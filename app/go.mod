@@ -1,7 +1,6 @@
 module go-tribute-api
 
 go 1.23
-
 toolchain go1.23.2
 
 require (
@@ -11,5 +10,5 @@ require (
 
 require (
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 )
