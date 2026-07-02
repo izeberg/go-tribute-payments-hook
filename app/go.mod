@@ -1,8 +1,6 @@
 module go-tribute-api
 
-go 1.23
-
-toolchain go1.23.2
+go 1.25.0
 
 require (
 	github.com/amarnathcjd/gogram v0.0.0-20241012182254-0b9055ee7a97
@@ -11,5 +9,5 @@ require (
 
 require (
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 )
